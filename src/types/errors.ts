@@ -1,0 +1,10 @@
+export enum AUTH_ERROR {
+  INVALID_SIGN_UP_DATA = 0,
+  INVALID_LOGIN_DATA = 1,
+  EMAIL_IN_USE = 2,
+  USER_NOT_FOUND = 3,
+}
+
+export enum COMMON_ERROR {
+  SERVER_ERROR = 0,
+}
