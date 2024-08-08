@@ -3,8 +3,6 @@ export enum AUTH_ERROR {
   INVALID_LOGIN_DATA = 1,
   EMAIL_IN_USE = 2,
   USER_NOT_FOUND = 3,
-}
-
-export enum COMMON_ERROR {
-  SERVER_ERROR = 0,
+  INVALID_TOKEN = 4,
+  SERVER_ERROR = 5,
 }
