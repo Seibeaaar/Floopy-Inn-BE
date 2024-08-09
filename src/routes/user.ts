@@ -135,4 +135,6 @@ UserRouter.post(
   },
 );
 
+//TODO: Profile picture logic
+
 export default UserRouter;
