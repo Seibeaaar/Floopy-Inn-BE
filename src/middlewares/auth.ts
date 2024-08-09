@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import { compare as comparePassowrds } from "bcrypt";
 import { User } from "../database/user";
+
 import { generateErrorMesaage } from "../utils/common";
 import { AUTH_ERROR } from "@/types/errors";
 import { PASSWORD_REGEX } from "@/constants/auth";
@@ -18,6 +20,44 @@ export const validatePassword = async (
     next();
   } catch (e) {
     res.status(400).send(generateErrorMesaage(e));
+  }
+};
+
+export const validateLoginBody = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    if (!req.body.email) {
+      throw new Error("Email required");
+    }
+
+    const user = await User.findOne({
+      where: {
+        email: req.body.email,
+      },
+    });
+
+    if (!user) {
+      throw new Error(`No user with such credentials found!`);
+    }
+
+    if (user.dataValues.password) {
+      comparePassowrds(req.body.password, user.dataValues.password, (err) => {
+        if (err) {
+          throw new Error(`No user with such credentials found!`);
+        }
+      });
+    }
+
+    res.locals.user = user;
+    next();
+  } catch (e) {
+    res.status(400).send({
+      type: AUTH_ERROR.INVALID_LOGIN_DATA,
+      mesaage: generateErrorMesaage(e),
+    });
   }
 };
 
