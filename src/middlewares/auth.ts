@@ -19,7 +19,10 @@ export const validatePassword = async (
 
     next();
   } catch (e) {
-    res.status(400).send(generateErrorMesaage(e));
+    res.status(400).send({
+      type: AUTH_ERROR.INVALID_SIGN_UP_DATA,
+      message: generateErrorMesaage(e),
+    });
   }
 };
 

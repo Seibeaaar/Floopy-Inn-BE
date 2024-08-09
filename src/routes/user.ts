@@ -10,7 +10,7 @@ import {
 import { checkIfValidationError, generateErrorMesaage } from "@/utils/common";
 import { AUTH_ERROR, USER_ERROR } from "@/types/errors";
 import { validateJWToken } from "@/middlewares/common";
-import { checkUserRequestWithId } from "@/middlewares/user";
+import { checkProfileCompleteData } from "@/middlewares/user";
 
 const UserRouter = Router();
 
@@ -62,54 +62,74 @@ UserRouter.post("/login", validateLoginBody, async (req, res) => {
   }
 });
 
-UserRouter.delete(
-  "/:id/delete",
+UserRouter.delete("/delete", validateJWToken, async (req, res) => {
+  try {
+    const { id } = res.locals;
+    await User.destroy({
+      where: {
+        id,
+      },
+    });
+
+    res.status(200).send("User deleted successfully");
+  } catch (e) {
+    res.status(500).send({
+      type: USER_ERROR.SERVER_ERROR,
+      message: generateErrorMesaage(e),
+    });
+  }
+});
+
+UserRouter.put("/update", validateJWToken, async (req, res) => {
+  try {
+    const { id } = res.locals;
+    await User.update(req.body, {
+      where: {
+        id,
+      },
+    });
+
+    const updatedUser = await User.findByPk(id);
+
+    res.status(200).send(updatedUser);
+  } catch (e) {
+    const isValidationError = checkIfValidationError(e);
+    const status = isValidationError ? 400 : 500;
+    const errorType = isValidationError
+      ? USER_ERROR.INVALID_UPDATE_DATA
+      : USER_ERROR.SERVER_ERROR;
+    res.status(status).send({
+      type: errorType,
+      message: generateErrorMesaage(e),
+    });
+  }
+});
+
+UserRouter.post(
+  "/complete-profile",
   validateJWToken,
-  checkUserRequestWithId,
+  checkProfileCompleteData,
   async (req, res) => {
     try {
       const { id } = res.locals;
-      await User.destroy({
-        where: {
-          id,
+      await User.update(
+        {
+          ...req.body,
+          profileComplete: true,
         },
-      });
+        {
+          where: {
+            id,
+          },
+        },
+      );
 
-      res.status(200).send("User deleted successfully");
+      const user = await User.findByPk(id);
+      res.status(200).send(user);
     } catch (e) {
       res.status(500).send({
         type: USER_ERROR.SERVER_ERROR,
-        message: generateErrorMesaage(e),
-      });
-    }
-  },
-);
-
-UserRouter.put(
-  "/:id/update",
-  validateJWToken,
-  checkUserRequestWithId,
-  async (req, res) => {
-    try {
-      const { id } = res.locals;
-      await User.update(req.body, {
-        where: {
-          id,
-        },
-      });
-
-      const updatedUser = await User.findByPk(id);
-
-      res.status(200).send(updatedUser);
-    } catch (e) {
-      const isValidationError = checkIfValidationError(e);
-      const status = isValidationError ? 400 : 500;
-      const errorType = isValidationError
-        ? USER_ERROR.INVALID_UPDATE_DATA
-        : USER_ERROR.SERVER_ERROR;
-      res.status(status).send({
-        type: errorType,
-        message: generateErrorMesaage(e),
+        messsage: generateErrorMesaage(e),
       });
     }
   },
