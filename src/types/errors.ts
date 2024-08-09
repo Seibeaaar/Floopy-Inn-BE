@@ -6,3 +6,9 @@ export enum AUTH_ERROR {
   INVALID_TOKEN = 4,
   SERVER_ERROR = 5,
 }
+
+export enum USER_ERROR {
+  NOT_ALLOWED = 0,
+  INVALID_UPDATE_DATA = 1,
+  SERVER_ERROR = 2,
+}

@@ -8,14 +8,14 @@ import {
   validatePassword,
 } from "../middlewares/auth";
 import { checkIfValidationError, generateErrorMesaage } from "@/utils/common";
-import { AUTH_ERROR } from "@/types/errors";
+import { AUTH_ERROR, USER_ERROR } from "@/types/errors";
 import { validateJWToken } from "@/middlewares/common";
+import { checkUserRequestWithId } from "@/middlewares/user";
 
 const UserRouter = Router();
 
 UserRouter.post(
   "/sign-up",
-  validateJWToken,
   checkEmailInUse,
   validatePassword,
   async (req, res) => {
@@ -25,8 +25,8 @@ UserRouter.post(
       }
       const user = await User.create(req.body);
 
-      const { email } = user.dataValues;
-      const token = signToken({ email }, process.env.TOKEN_SECRET!, {
+      const { id } = user.dataValues;
+      const token = signToken({ id }, process.env.TOKEN_SECRET!, {
         expiresIn: "4h",
       });
       res.cookie("sign-jwt", token);
@@ -48,8 +48,8 @@ UserRouter.post(
 UserRouter.post("/login", validateLoginBody, async (req, res) => {
   try {
     const { user } = res.locals;
-    const { email } = user.dataValues;
-    const token = signToken({ email }, process.env.TOKEN_SECRET!, {
+    const { id } = user.dataValues;
+    const token = signToken({ id }, process.env.TOKEN_SECRET!, {
       expiresIn: "4h",
     });
     res.cookie("sign-jwt", token);
@@ -61,5 +61,58 @@ UserRouter.post("/login", validateLoginBody, async (req, res) => {
     });
   }
 });
+
+UserRouter.delete(
+  "/:id/delete",
+  validateJWToken,
+  checkUserRequestWithId,
+  async (req, res) => {
+    try {
+      const { id } = res.locals;
+      await User.destroy({
+        where: {
+          id,
+        },
+      });
+
+      res.status(200).send("User deleted successfully");
+    } catch (e) {
+      res.status(500).send({
+        type: USER_ERROR.SERVER_ERROR,
+        message: generateErrorMesaage(e),
+      });
+    }
+  },
+);
+
+UserRouter.put(
+  "/:id/update",
+  validateJWToken,
+  checkUserRequestWithId,
+  async (req, res) => {
+    try {
+      const { id } = res.locals;
+      await User.update(req.body, {
+        where: {
+          id,
+        },
+      });
+
+      const updatedUser = await User.findByPk(id);
+
+      res.status(200).send(updatedUser);
+    } catch (e) {
+      const isValidationError = checkIfValidationError(e);
+      const status = isValidationError ? 400 : 500;
+      const errorType = isValidationError
+        ? USER_ERROR.INVALID_UPDATE_DATA
+        : USER_ERROR.SERVER_ERROR;
+      res.status(status).send({
+        type: errorType,
+        message: generateErrorMesaage(e),
+      });
+    }
+  },
+);
 
 export default UserRouter;

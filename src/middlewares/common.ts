@@ -9,15 +9,15 @@ export const validateJWToken = async (
   next: NextFunction,
 ) => {
   try {
-    const token = req.cookies["sign-wt"];
+    const token = req.cookies["sign-jwt"];
     if (!token) {
       return res.status(401).send({
         type: AUTH_ERROR.INVALID_TOKEN,
         message: "No token provided",
       });
     }
-    const { email } = verify(token, process.env.TOKEN_SECRET!) as JwtPayload;
-    res.locals.email = email;
+    const { id } = verify(token, process.env.TOKEN_SECRET!) as JwtPayload;
+    res.locals.id = id;
     next();
   } catch (e) {
     res.status(403).send({
